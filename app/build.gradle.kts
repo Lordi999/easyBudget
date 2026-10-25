@@ -1,4 +1,18 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+/**
+ * Signierschlüssel liegt bewusst außerhalb des Repos, standardmäßig unter ~/.easybudget/keystore.properties
+ * (storeFile, storePassword, keyAlias, keyPassword). Anderer Ort: -Peasybudget.keystore=/pfad/keystore.properties
+ * Fehlt die Datei, wird der Release-Build unsigniert gebaut.
+ */
+val keystorePropertiesFile = file(
+    (findProperty("easybudget.keystore") as String?)
+        ?: "${System.getProperty("user.home")}/.easybudget/keystore.properties"
+)
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) keystorePropertiesFile.inputStream().use { load(it) }
+}
 
 plugins {
     id("com.android.application")
@@ -19,9 +33,28 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
+        debug {
+            // Eigene App neben der Release-Version, damit Entwicklung nie die echten Daten berührt.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            manifestPlaceholders["appLabel"] = "Budget Debug"
+        }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
+            manifestPlaceholders["appLabel"] = "Budget"
         }
     }
     compileOptions {
