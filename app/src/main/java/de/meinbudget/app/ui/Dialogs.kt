@@ -186,6 +186,7 @@ fun wallosResultText(result: WallosResult): String = when (result) {
     }
     WallosResult.NetworkError -> stringResource(R.string.wallos_error_network)
     is WallosResult.HttpError -> stringResource(R.string.wallos_error_http, result.code)
+    WallosResult.Redirect -> stringResource(R.string.wallos_error_redirect)
     WallosResult.InvalidResponse -> stringResource(R.string.wallos_error_invalid)
     is WallosResult.ApiError -> stringResource(
         R.string.wallos_error_api,

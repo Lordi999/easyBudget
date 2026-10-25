@@ -29,7 +29,7 @@ data class WallosConfig(val enabled: Boolean, val url: String, val apiKey: Strin
 }
 
 /** App-Einstellungen, gespeichert in den SharedPreferences. Weitere Einstellungen kommen hier dazu. */
-class SettingsRepository(context: Context) {
+class SettingsRepository(private val context: Context) {
     private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
     private val _themeMode = MutableStateFlow(readEnum(KEY_THEME, ThemeMode.SYSTEM))
@@ -48,22 +48,40 @@ class SettingsRepository(context: Context) {
         prefs.edit().putString(KEY_LANGUAGE, language.name).apply()
     }
 
-    private val _wallos = MutableStateFlow(
-        WallosConfig(
-            enabled = prefs.getBoolean(KEY_WALLOS_ENABLED, false),
-            url = prefs.getString(KEY_WALLOS_URL, "").orEmpty(),
-            apiKey = prefs.getString(KEY_WALLOS_API_KEY, "").orEmpty(),
+    // Lazy, damit attachBaseContext (liest nur die Sprache) den Keystore nicht anfasst.
+    private val secrets by lazy { SecretStore(context) }
+
+    private val _wallos by lazy {
+        MutableStateFlow(
+            WallosConfig(
+                enabled = prefs.getBoolean(KEY_WALLOS_ENABLED, false),
+                url = prefs.getString(KEY_WALLOS_URL, "").orEmpty(),
+                apiKey = readApiKey(),
+            )
         )
-    )
-    val wallos: StateFlow<WallosConfig> = _wallos.asStateFlow()
+    }
+    val wallos: StateFlow<WallosConfig> get() = _wallos
 
     fun setWallos(config: WallosConfig) {
+        val keyChanged = config.apiKey != _wallos.value.apiKey
         _wallos.value = config
         prefs.edit()
             .putBoolean(KEY_WALLOS_ENABLED, config.enabled)
             .putString(KEY_WALLOS_URL, config.url)
-            .putString(KEY_WALLOS_API_KEY, config.apiKey)
             .apply()
+        // Keystore-Fehler sind sehr selten; dann bleibt der Key nur bis zum App-Neustart erhalten.
+        if (keyChanged) runCatching { secrets.put(SECRET_WALLOS_API_KEY, config.apiKey) }
+    }
+
+    /** Liest den verschlüsselten Key; ein noch unverschlüsselt gespeicherter (ältere Version) wird umgezogen. */
+    private fun readApiKey(): String {
+        val legacy = prefs.getString(KEY_WALLOS_API_KEY_LEGACY, null)
+        if (legacy != null) {
+            secrets.put(SECRET_WALLOS_API_KEY, legacy)
+            prefs.edit().remove(KEY_WALLOS_API_KEY_LEGACY).apply()
+            return legacy
+        }
+        return secrets.get(SECRET_WALLOS_API_KEY)
     }
 
     private inline fun <reified T : Enum<T>> readEnum(key: String, default: T): T =
@@ -76,7 +94,9 @@ class SettingsRepository(context: Context) {
         private const val KEY_LANGUAGE = "language"
         private const val KEY_WALLOS_ENABLED = "wallos_enabled"
         private const val KEY_WALLOS_URL = "wallos_url"
-        private const val KEY_WALLOS_API_KEY = "wallos_api_key"
+        /** Nur noch zum Umziehen alter, unverschlüsselt gespeicherter Keys */
+        private const val KEY_WALLOS_API_KEY_LEGACY = "wallos_api_key"
+        private const val SECRET_WALLOS_API_KEY = "wallos_api_key"
 
         /**
          * Liefert einen Context mit der gewählten App-Sprache.

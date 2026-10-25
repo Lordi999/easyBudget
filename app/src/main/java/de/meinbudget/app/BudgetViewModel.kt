@@ -9,6 +9,8 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = BudgetRepository(app)
     private val settings = SettingsRepository(app)
     val months: StateFlow<List<Month>> = repo.months
+    val storageProblem: StateFlow<StorageProblem?> = repo.problem
+    fun dismissStorageProblem() = repo.dismissProblem()
     val themeMode: StateFlow<ThemeMode> = settings.themeMode
 
     val language: StateFlow<AppLanguage> = settings.language

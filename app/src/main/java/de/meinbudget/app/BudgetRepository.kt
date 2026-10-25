@@ -14,6 +14,14 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.io.IOException
+
+/** Probleme beim Lesen/Schreiben der Daten, die dem Nutzer angezeigt werden. */
+sealed interface StorageProblem {
+    /** Datei war unlesbar und wurde unter [backupName] beiseitegelegt – nicht überschrieben. */
+    data class LoadFailed(val backupName: String) : StorageProblem
+    data object SaveFailed : StorageProblem
+}
 
 /** Speichert alle Monate als JSON-Datei im privaten App-Speicher. */
 class BudgetRepository(context: Context) {
@@ -23,6 +31,9 @@ class BudgetRepository(context: Context) {
     private val writeLock = Mutex()
     private val serializer = ListSerializer(Month.serializer())
 
+    private val _problem = MutableStateFlow<StorageProblem?>(null)
+    val problem: StateFlow<StorageProblem?> = _problem.asStateFlow()
+
     private val _months = MutableStateFlow(load())
     val months: StateFlow<List<Month>> = _months.asStateFlow()
 
@@ -30,19 +41,31 @@ class BudgetRepository(context: Context) {
         _months.update { transform(it).sortedByDescending(Month::key) }
         scope.launch {
             writeLock.withLock {
-                val tmp = File(file.parentFile, file.name + ".tmp")
-                tmp.writeText(json.encodeToString(serializer, _months.value))
-                tmp.renameTo(file)
+                try {
+                    val tmp = File(file.parentFile, file.name + ".tmp")
+                    tmp.writeText(json.encodeToString(serializer, _months.value))
+                    if (!tmp.renameTo(file)) throw IOException("rename failed")
+                } catch (e: IOException) {
+                    _problem.value = StorageProblem.SaveFailed
+                }
             }
         }
     }
 
-    private fun load(): List<Month> =
-        if (file.exists()) {
-            runCatching { json.decodeFromString(serializer, file.readText()) }
-                .getOrDefault(emptyList())
-                .sortedByDescending(Month::key)
-        } else {
+    fun dismissProblem() {
+        _problem.value = null
+    }
+
+    private fun load(): List<Month> {
+        if (!file.exists()) return emptyList()
+        return try {
+            json.decodeFromString(serializer, file.readText()).sortedByDescending(Month::key)
+        } catch (e: Exception) {
+            // Unlesbare Datei sichern, damit sie beim nächsten Speichern nicht überschrieben wird.
+            val backup = File(file.parentFile, "budget-unreadable-${System.currentTimeMillis()}.json")
+            if (!file.renameTo(backup)) file.copyTo(backup, overwrite = true)
+            _problem.value = StorageProblem.LoadFailed(backup.name)
             emptyList()
         }
+    }
 }

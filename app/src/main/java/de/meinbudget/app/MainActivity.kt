@@ -8,6 +8,9 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -15,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.meinbudget.app.ui.BudgetTheme
 import de.meinbudget.app.ui.MonthListScreen
@@ -60,6 +64,7 @@ fun BudgetApp(vm: BudgetViewModel, onLanguageChange: (AppLanguage) -> Unit) {
     val themeMode by vm.themeMode.collectAsState()
     val language by vm.language.collectAsState()
     val wallos by vm.wallos.collectAsState()
+    val storageProblem by vm.storageProblem.collectAsState()
     var openKey by rememberSaveable { mutableStateOf<Int?>(null) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     val open = months.find { it.key == openKey }
@@ -104,5 +109,24 @@ fun BudgetApp(vm: BudgetViewModel, onLanguageChange: (AppLanguage) -> Unit) {
                 },
             )
         }
+    }
+
+    storageProblem?.let { problem ->
+        AlertDialog(
+            onDismissRequest = vm::dismissStorageProblem,
+            title = { Text(stringResource(R.string.storage_problem_title)) },
+            text = {
+                Text(
+                    when (problem) {
+                        is StorageProblem.LoadFailed ->
+                            stringResource(R.string.storage_load_failed, problem.backupName)
+                        StorageProblem.SaveFailed -> stringResource(R.string.storage_save_failed)
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = vm::dismissStorageProblem) { Text(stringResource(R.string.ok)) }
+            },
+        )
     }
 }

@@ -1,5 +1,6 @@
 package de.meinbudget.app
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -8,7 +9,10 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.InputStream
+import java.math.BigDecimal
 import java.math.RoundingMode
 import java.net.HttpURLConnection
 import java.net.URL
@@ -19,6 +23,8 @@ sealed interface WallosResult {
     /** Server nicht erreichbar (falsche URL, kein Netz, Timeout) */
     data object NetworkError : WallosResult
     data class HttpError(val code: Int) : WallosResult
+    /** Server leitet weiter (z. B. http → https); wir folgen nicht, damit der API-Key nicht woanders landet */
+    data object Redirect : WallosResult
     /** Antwort ist kein Wallos-JSON, z. B. weil die URL auf eine andere Seite zeigt */
     data object InvalidResponse : WallosResult
     /** Wallos meldet einen Fehler, z. B. "Invalid API key" */
@@ -43,18 +49,41 @@ object WallosClient {
             try {
                 connection.connectTimeout = 10_000
                 connection.readTimeout = 10_000
+                // Die URL enthält den API-Key – nicht automatisch zu einer anderen Adresse weiterreichen.
+                connection.instanceFollowRedirects = false
                 connection.setRequestProperty("Accept", "application/json")
 
                 val code = connection.responseCode
+                if (code in 300..399) return@withContext WallosResult.Redirect
                 if (code !in 200..299) return@withContext WallosResult.HttpError(code)
-                val body = connection.inputStream.bufferedReader().use { it.readText() }
+                val body = readLimited(connection.inputStream) ?: return@withContext WallosResult.InvalidResponse
                 parse(body)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: IOException) {
+                WallosResult.NetworkError
+            } catch (e: Exception) {
+                // Unerwartete Fehler (z. B. ungültige Adresse) sollen die App nicht abstürzen lassen.
                 WallosResult.NetworkError
             } finally {
                 connection.disconnect()
             }
         }
+
+    /** Liest höchstens [MAX_RESPONSE_BYTES]; größere Antworten sind keine Wallos-Antwort. */
+    private fun readLimited(input: InputStream): String? = input.use { stream ->
+        val buffer = ByteArrayOutputStream()
+        val chunk = ByteArray(8 * 1024)
+        while (true) {
+            val read = stream.read(chunk)
+            if (read < 0) break
+            buffer.write(chunk, 0, read)
+            if (buffer.size() > MAX_RESPONSE_BYTES) return null
+        }
+        buffer.toString(Charsets.UTF_8.name())
+    }
+
+    private const val MAX_RESPONSE_BYTES = 1024 * 1024
 
     private fun parse(body: String): WallosResult {
         val obj: JsonObject = runCatching { json.parseToJsonElement(body).jsonObject }
@@ -64,12 +93,26 @@ object WallosClient {
             ?: return WallosResult.InvalidResponse
         if (!success) return WallosResult.ApiError(obj["title"]?.jsonPrimitive?.contentOrNull)
 
-        val cost = obj["monthly_cost"]?.jsonPrimitive?.contentOrNull?.toBigDecimalOrNull()
+        val cost = obj["monthly_cost"]?.jsonPrimitive?.contentOrNull?.let(::parseAmount)
+            ?.takeIf { it.abs() <= MAX_AMOUNT }
             ?: return WallosResult.InvalidResponse
         return WallosResult.Success(
-            cents = cost.movePointRight(2).setScale(0, RoundingMode.HALF_UP).toLong(),
+            cents = cost.movePointRight(2).setScale(0, RoundingMode.HALF_UP).longValueExact(),
             currencyCode = obj["currency_code"]?.jsonPrimitive?.contentOrNull,
         )
+    }
+
+    /**
+     * Laut Doku ist monthly_cost eine Zahl, Wallos liefert aber z. B. "2,045.32" als Text.
+     * Akzeptiert beides: Der letzte Trenner vor 1–2 Endziffern ist das Dezimalzeichen, alle anderen Trenner fallen weg.
+     */
+    internal fun parseAmount(raw: String): BigDecimal? {
+        val s = raw.trim()
+        if (!Regex("-?[0-9.,]+").matches(s)) return null
+        val decimalSep = Regex("[.,](\\d{1,2})$").find(s)?.range?.first
+        val normalized = s.filterIndexed { i, c -> c.isDigit() || c == '-' || i == decimalSep }
+            .replace(',', '.')
+        return normalized.toBigDecimalOrNull()
     }
 
     /** "wallos.example.com/" → "https://wallos.example.com" */

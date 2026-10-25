@@ -8,6 +8,12 @@
     <string name="edit">Bearbeiten</string>
     <string name="back">Zurück</string>
     <string name="more">Mehr</string>
+    <string name="ok">OK</string>
+
+    <!-- Speicherprobleme -->
+    <string name="storage_problem_title">Problem mit deinen Daten</string>
+    <string name="storage_load_failed">Deine gespeicherten Daten konnten nicht gelesen werden. Sie wurden als „%1$s“ aufbewahrt und nicht überschrieben. Die App startet vorerst leer.</string>
+    <string name="storage_save_failed">Deine letzte Änderung konnte nicht gespeichert werden. Ist der Speicher des Geräts voll?</string>
 
     <!-- Monatsliste -->
     <string name="settings">Einstellungen</string>
@@ -72,6 +78,7 @@
     <string name="wallos_currency_warning">Achtung: Wallos rechnet in %1$s als Hauptwährung.</string>
     <string name="wallos_error_network">Server nicht erreichbar. Bitte URL und Verbindung prüfen.</string>
     <string name="wallos_error_http">Server antwortet mit Fehler %1$d.</string>
+    <string name="wallos_error_redirect">Der Server leitet auf eine andere Adresse weiter. Bitte die endgültige Adresse eintragen (z. B. mit https://).</string>
     <string name="wallos_error_invalid">Unerwartete Antwort. Zeigt die URL auf Wallos?</string>
     <string name="wallos_error_api">Wallos: %1$s</string>
     <string name="wallos_error_unknown">Unbekannter Fehler</string>
