@@ -1,0 +1,78 @@
+<resources>
+    <string name="app_name">Budget</string>
+
+    <!-- Allgemein -->
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="back">Back</string>
+    <string name="more">More</string>
+
+    <!-- Monatsliste -->
+    <string name="settings">Settings</string>
+    <string name="new_month">New month</string>
+    <string name="no_months">No months yet.\nTap + to create your first month.</string>
+    <plurals name="month_summary">
+        <item quantity="one">Budget %1$s · %2$d entry</item>
+        <item quantity="other">Budget %1$s · %2$d entries</item>
+    </plurals>
+
+    <!-- Monatsansicht -->
+    <string name="available">Available</string>
+    <string name="budget">Budget</string>
+    <string name="expenses">Expenses</string>
+    <string name="earnings">Earnings</string>
+    <string name="calculation">Start %1$s + Income %2$s − Fixed %3$s</string>
+    <string name="edit_base_values">Edit base values</string>
+    <string name="base_values_title">Base values %1$s</string>
+    <string name="delete_month">Delete month</string>
+    <string name="delete_month_confirm">Delete %1$s with all entries?</string>
+    <string name="no_entries">No entries yet.\nEnter a description and amount below.</string>
+    <string name="entry_deleted">“%1$s” deleted</string>
+    <string name="entry_fallback">Entry</string>
+    <string name="undo">Undo</string>
+    <string name="description">Description</string>
+    <string name="add_entry">Add entry</string>
+    <string name="no_description">(no description)</string>
+
+    <!-- Dialoge -->
+    <string name="previous_month">Previous month</string>
+    <string name="next_month">Next month</string>
+    <string name="month_exists">This month already exists.</string>
+    <string name="opening_balance">Opening balance</string>
+    <string name="income">Income</string>
+    <string name="fixed_expenses">Fixed expenses</string>
+    <string name="budget_result">Budget: %1$s</string>
+    <string name="edit_entry">Edit entry</string>
+    <string name="amount_hint">Amount (− expense, + income)</string>
+
+    <!-- Einstellungen -->
+    <string name="appearance">Appearance</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="language">Language</string>
+    <string name="language_system">System default</string>
+    <string name="show">Show</string>
+    <string name="hide">Hide</string>
+
+    <!-- Wallos -->
+    <string name="wallos_section">Wallos integration</string>
+    <string name="wallos_enabled">Use Wallos</string>
+    <string name="wallos_enabled_desc">Load fixed expenses from Wallos when creating a month</string>
+    <string name="wallos_url">Wallos URL</string>
+    <string name="wallos_http_warning">Without https the API key is sent unencrypted.</string>
+    <string name="wallos_api_key">API key</string>
+    <string name="wallos_api_key_help">You can find it in Wallos in your profile.</string>
+    <string name="wallos_test">Test connection</string>
+    <string name="wallos_load">Load from Wallos</string>
+    <string name="wallos_loaded">Loaded from Wallos: %1$s</string>
+    <string name="wallos_currency_warning">Note: Wallos uses %1$s as main currency.</string>
+    <string name="wallos_error_network">Server not reachable. Please check the URL and your connection.</string>
+    <string name="wallos_error_http">Server responded with error %1$d.</string>
+    <string name="wallos_error_invalid">Unexpected response. Is the URL pointing to Wallos?</string>
+    <string name="wallos_error_api">Wallos: %1$s</string>
+    <string name="wallos_error_unknown">Unknown error</string>
+</resources>

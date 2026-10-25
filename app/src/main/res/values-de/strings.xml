@@ -1,0 +1,78 @@
+<resources>
+    <string name="app_name">Budget</string>
+
+    <!-- Allgemein -->
+    <string name="save">Speichern</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="delete">Löschen</string>
+    <string name="edit">Bearbeiten</string>
+    <string name="back">Zurück</string>
+    <string name="more">Mehr</string>
+
+    <!-- Monatsliste -->
+    <string name="settings">Einstellungen</string>
+    <string name="new_month">Neuer Monat</string>
+    <string name="no_months">Noch keine Monate.\nTippe auf + um den ersten Monat anzulegen.</string>
+    <plurals name="month_summary">
+        <item quantity="one">Budget %1$s · %2$d Buchung</item>
+        <item quantity="other">Budget %1$s · %2$d Buchungen</item>
+    </plurals>
+
+    <!-- Monatsansicht -->
+    <string name="available">Verfügbar</string>
+    <string name="budget">Budget</string>
+    <string name="expenses">Ausgaben</string>
+    <string name="earnings">Einnahmen</string>
+    <string name="calculation">Start %1$s + Einkommen %2$s − Fix %3$s</string>
+    <string name="edit_base_values">Basiswerte bearbeiten</string>
+    <string name="base_values_title">Basiswerte %1$s</string>
+    <string name="delete_month">Monat löschen</string>
+    <string name="delete_month_confirm">%1$s mit allen Buchungen löschen?</string>
+    <string name="no_entries">Noch keine Buchungen.\nUnten Beschreibung und Betrag eintragen.</string>
+    <string name="entry_deleted">„%1$s“ gelöscht</string>
+    <string name="entry_fallback">Buchung</string>
+    <string name="undo">Rückgängig</string>
+    <string name="description">Beschreibung</string>
+    <string name="add_entry">Buchung hinzufügen</string>
+    <string name="no_description">(ohne Beschreibung)</string>
+
+    <!-- Dialoge -->
+    <string name="previous_month">Vorheriger Monat</string>
+    <string name="next_month">Nächster Monat</string>
+    <string name="month_exists">Diesen Monat gibt es schon.</string>
+    <string name="opening_balance">Anfangssaldo</string>
+    <string name="income">Einkommen</string>
+    <string name="fixed_expenses">Fixe Ausgaben</string>
+    <string name="budget_result">Budget: %1$s</string>
+    <string name="edit_entry">Buchung bearbeiten</string>
+    <string name="amount_hint">Betrag (− Ausgabe, + Einnahme)</string>
+
+    <!-- Einstellungen -->
+    <string name="appearance">Darstellung</string>
+    <string name="theme">Design</string>
+    <string name="theme_system">Wie System</string>
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
+    <string name="language">Sprache</string>
+    <string name="language_system">Wie System</string>
+    <string name="show">Anzeigen</string>
+    <string name="hide">Verbergen</string>
+
+    <!-- Wallos -->
+    <string name="wallos_section">Wallos-Integration</string>
+    <string name="wallos_enabled">Wallos verwenden</string>
+    <string name="wallos_enabled_desc">Fixe Ausgaben beim Anlegen eines Monats aus Wallos laden</string>
+    <string name="wallos_url">Wallos-URL</string>
+    <string name="wallos_http_warning">Ohne https wird der API-Key unverschlüsselt übertragen.</string>
+    <string name="wallos_api_key">API-Key</string>
+    <string name="wallos_api_key_help">Zu finden in Wallos in deinem Profil.</string>
+    <string name="wallos_test">Verbindung testen</string>
+    <string name="wallos_load">Lade aus Wallos</string>
+    <string name="wallos_loaded">Aus Wallos geladen: %1$s</string>
+    <string name="wallos_currency_warning">Achtung: Wallos rechnet in %1$s als Hauptwährung.</string>
+    <string name="wallos_error_network">Server nicht erreichbar. Bitte URL und Verbindung prüfen.</string>
+    <string name="wallos_error_http">Server antwortet mit Fehler %1$d.</string>
+    <string name="wallos_error_invalid">Unerwartete Antwort. Zeigt die URL auf Wallos?</string>
+    <string name="wallos_error_api">Wallos: %1$s</string>
+    <string name="wallos_error_unknown">Unbekannter Fehler</string>
+</resources>
