@@ -1,5 +1,8 @@
 package de.meinbudget.app.ui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,6 +43,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -50,10 +54,12 @@ import androidx.compose.ui.unit.dp
 import de.meinbudget.app.AppLanguage
 import de.meinbudget.app.R
 import de.meinbudget.app.ThemeMode
+import de.meinbudget.app.TransferResult
 import de.meinbudget.app.WallosClient
 import de.meinbudget.app.WallosConfig
 import de.meinbudget.app.WallosResult
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,6 +71,8 @@ fun SettingsScreen(
     onLanguageChange: (AppLanguage) -> Unit,
     wallos: WallosConfig,
     onWallosChange: (WallosConfig) -> Unit,
+    onExport: suspend (Uri) -> TransferResult,
+    onImport: suspend (Uri) -> TransferResult,
     onBack: () -> Unit,
 ) {
     Scaffold(
@@ -107,8 +115,80 @@ fun SettingsScreen(
 
             SectionHeader(stringResource(R.string.wallos_section))
             WallosSettings(wallos, onWallosChange)
+
+            SectionHeader(stringResource(R.string.data_section))
+            DataTransferSettings(onExport, onImport)
         }
     }
+}
+
+@Composable
+private fun DataTransferSettings(
+    onExport: suspend (Uri) -> TransferResult,
+    onImport: suspend (Uri) -> TransferResult,
+) {
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    var result by remember { mutableStateOf<TransferResult?>(null) }
+
+    fun launchTransfer(action: suspend () -> TransferResult) {
+        busy = true
+        scope.launch {
+            result = action()
+            busy = false
+        }
+    }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri -> if (uri != null) launchTransfer { onExport(uri) } }
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> if (uri != null) launchTransfer { onImport(uri) } }
+
+    Text(
+        stringResource(R.string.data_description),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        OutlinedButton(
+            onClick = { exportLauncher.launch("budget-export-${LocalDate.now()}.json") },
+            enabled = !busy,
+            modifier = Modifier.weight(1f),
+        ) { Text(stringResource(R.string.data_export)) }
+        OutlinedButton(
+            // Manche Dateimanager kennen "application/json" nicht genau, daher auch allgemeine Typen.
+            onClick = { importLauncher.launch(arrayOf("application/json", "text/*", "application/octet-stream")) },
+            enabled = !busy,
+            modifier = Modifier.weight(1f),
+        ) { Text(stringResource(R.string.data_import)) }
+    }
+    result?.let { r ->
+        val isError = r is TransferResult.WriteFailed || r is TransferResult.ReadFailed || r is TransferResult.InvalidFile
+        Text(
+            transferResultText(r),
+            style = MaterialTheme.typography.bodySmall,
+            color = if (isError) MaterialTheme.colorScheme.error else LocalAmountColors.current.positive,
+        )
+    }
+}
+
+@Composable
+private fun transferResultText(result: TransferResult): String = when (result) {
+    is TransferResult.Exported -> pluralStringResource(R.plurals.data_exported, result.count, result.count)
+    is TransferResult.Imported -> buildList {
+        add(pluralStringResource(R.plurals.data_imported, result.result.imported, result.result.imported))
+        if (result.result.skipped > 0) {
+            add(pluralStringResource(R.plurals.data_skipped, result.result.skipped, result.result.skipped))
+        }
+        if (result.result.invalid > 0) {
+            add(pluralStringResource(R.plurals.data_invalid, result.result.invalid, result.result.invalid))
+        }
+    }.joinToString(" ")
+    TransferResult.WriteFailed -> stringResource(R.string.data_write_failed)
+    TransferResult.ReadFailed -> stringResource(R.string.data_read_failed)
+    TransferResult.InvalidFile -> stringResource(R.string.data_invalid_file)
 }
 
 @Composable

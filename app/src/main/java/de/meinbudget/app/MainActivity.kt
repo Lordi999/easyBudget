@@ -34,6 +34,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Vom Widget geöffnet: direkt in den angetippten Monat springen
+        val initialMonthKey = intent.getIntExtra(BudgetWidget.EXTRA_OPEN_MONTH, -1).takeIf { it >= 0 }
         setContent {
             val vm: BudgetViewModel = viewModel()
             val themeMode by vm.themeMode.collectAsState()
@@ -47,7 +49,7 @@ class MainActivity : ComponentActivity() {
             }
 
             BudgetTheme(dark = dark) {
-                BudgetApp(vm, onLanguageChange = { language ->
+                BudgetApp(vm, initialMonthKey = initialMonthKey, onLanguageChange = { language ->
                     if (language != vm.language.value) {
                         vm.setLanguage(language)
                         recreate()
@@ -59,13 +61,13 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun BudgetApp(vm: BudgetViewModel, onLanguageChange: (AppLanguage) -> Unit) {
+fun BudgetApp(vm: BudgetViewModel, initialMonthKey: Int?, onLanguageChange: (AppLanguage) -> Unit) {
     val months by vm.months.collectAsState()
     val themeMode by vm.themeMode.collectAsState()
     val language by vm.language.collectAsState()
     val wallos by vm.wallos.collectAsState()
     val storageProblem by vm.storageProblem.collectAsState()
-    var openKey by rememberSaveable { mutableStateOf<Int?>(null) }
+    var openKey by rememberSaveable { mutableStateOf(initialMonthKey) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     val open = months.find { it.key == openKey }
 
@@ -79,6 +81,8 @@ fun BudgetApp(vm: BudgetViewModel, onLanguageChange: (AppLanguage) -> Unit) {
                 onLanguageChange = onLanguageChange,
                 wallos = wallos,
                 onWallosChange = vm::setWallos,
+                onExport = vm::exportTo,
+                onImport = vm::importFrom,
                 onBack = { showSettings = false },
             )
         }

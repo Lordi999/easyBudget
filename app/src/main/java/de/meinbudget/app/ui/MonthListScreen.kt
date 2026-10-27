@@ -95,9 +95,8 @@ fun MonthListScreen(
                                 Text(month.title, style = MaterialTheme.typography.titleMedium)
                                 Text(
                                     pluralStringResource(
-                                        R.plurals.month_summary,
+                                        R.plurals.entry_count,
                                         month.entries.size,
-                                        formatMoney(month.budgetCents),
                                         month.entries.size,
                                     ),
                                     style = MaterialTheme.typography.bodySmall,

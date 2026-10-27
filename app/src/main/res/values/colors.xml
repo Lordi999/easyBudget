@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget, heller Modus -->
+    <color name="widget_background">#FFF3F4F9</color>
+    <color name="widget_text">#FF1B1B21</color>
+    <color name="widget_text_secondary">#FF5D5E67</color>
+    <color name="amount_positive">#FF2E7D32</color>
+    <color name="amount_negative">#FFC62828</color>
+</resources>

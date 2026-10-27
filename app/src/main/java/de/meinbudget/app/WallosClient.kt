@@ -9,9 +9,7 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.io.InputStream
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.net.HttpURLConnection
@@ -56,7 +54,8 @@ object WallosClient {
                 val code = connection.responseCode
                 if (code in 300..399) return@withContext WallosResult.Redirect
                 if (code !in 200..299) return@withContext WallosResult.HttpError(code)
-                val body = readLimited(connection.inputStream) ?: return@withContext WallosResult.InvalidResponse
+                val body = readLimitedText(connection.inputStream, MAX_RESPONSE_BYTES)
+                    ?: return@withContext WallosResult.InvalidResponse
                 parse(body)
             } catch (e: CancellationException) {
                 throw e
@@ -70,19 +69,7 @@ object WallosClient {
             }
         }
 
-    /** Liest höchstens [MAX_RESPONSE_BYTES]; größere Antworten sind keine Wallos-Antwort. */
-    private fun readLimited(input: InputStream): String? = input.use { stream ->
-        val buffer = ByteArrayOutputStream()
-        val chunk = ByteArray(8 * 1024)
-        while (true) {
-            val read = stream.read(chunk)
-            if (read < 0) break
-            buffer.write(chunk, 0, read)
-            if (buffer.size() > MAX_RESPONSE_BYTES) return null
-        }
-        buffer.toString(Charsets.UTF_8.name())
-    }
-
+    /** Größere Antworten sind keine Wallos-Antwort. */
     private const val MAX_RESPONSE_BYTES = 1024 * 1024
 
     private fun parse(body: String): WallosResult {

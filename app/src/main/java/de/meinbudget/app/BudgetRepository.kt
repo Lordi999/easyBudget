@@ -23,8 +23,13 @@ sealed interface StorageProblem {
     data object SaveFailed : StorageProblem
 }
 
-/** Speichert alle Monate als JSON-Datei im privaten App-Speicher. */
-class BudgetRepository(context: Context) {
+data class ImportResult(val imported: Int, val skipped: Int, val invalid: Int)
+
+/**
+ * Speichert alle Monate als JSON-Datei im privaten App-Speicher.
+ * Eine Instanz pro Prozess ([get]), damit App und Widget dieselben Daten sehen.
+ */
+class BudgetRepository private constructor(private val context: Context) {
     private val file = File(context.filesDir, "budget.json")
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -49,7 +54,20 @@ class BudgetRepository(context: Context) {
                     _problem.value = StorageProblem.SaveFailed
                 }
             }
+            BudgetWidget.updateAll(context)
         }
+    }
+
+    /** Übernimmt nur Monate, die es noch nicht gibt; vorhandene bleiben unverändert. */
+    fun importMonths(parsed: ParsedBackup): ImportResult {
+        val existing = _months.value.map(Month::key).toSet()
+        val new = parsed.months.distinctBy(Month::key).filter { it.key !in existing }
+        if (new.isNotEmpty()) update { list -> list + new.filter { n -> list.none { it.key == n.key } } }
+        return ImportResult(
+            imported = new.size,
+            skipped = parsed.months.size - new.size,
+            invalid = parsed.invalid,
+        )
     }
 
     fun dismissProblem() {
@@ -67,5 +85,14 @@ class BudgetRepository(context: Context) {
             _problem.value = StorageProblem.LoadFailed(backup.name)
             emptyList()
         }
+    }
+
+    companion object {
+        @Volatile private var instance: BudgetRepository? = null
+
+        fun get(context: Context): BudgetRepository =
+            instance ?: synchronized(this) {
+                instance ?: BudgetRepository(context.applicationContext).also { instance = it }
+            }
     }
 }

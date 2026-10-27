@@ -19,9 +19,9 @@
     <string name="settings">Einstellungen</string>
     <string name="new_month">Neuer Monat</string>
     <string name="no_months">Noch keine Monate.\nTippe auf + um den ersten Monat anzulegen.</string>
-    <plurals name="month_summary">
-        <item quantity="one">Budget %1$s · %2$d Buchung</item>
-        <item quantity="other">Budget %1$s · %2$d Buchungen</item>
+    <plurals name="entry_count">
+        <item quantity="one">%d Buchung</item>
+        <item quantity="other">%d Buchungen</item>
     </plurals>
 
     <!-- Monatsansicht -->
@@ -63,6 +63,36 @@
     <string name="language_system">Wie System</string>
     <string name="show">Anzeigen</string>
     <string name="hide">Verbergen</string>
+
+    <!-- Export / Import -->
+    <string name="data_section">Daten</string>
+    <string name="data_description">Der Export speichert alle Monate in einer Datei. Der Import übernimmt Monate aus so einer Datei; Monate, die es schon gibt, werden übersprungen.</string>
+    <string name="data_export">Exportieren</string>
+    <string name="data_import">Importieren</string>
+    <plurals name="data_exported">
+        <item quantity="one">%d Monat exportiert.</item>
+        <item quantity="other">%d Monate exportiert.</item>
+    </plurals>
+    <plurals name="data_imported">
+        <item quantity="one">%d Monat importiert.</item>
+        <item quantity="other">%d Monate importiert.</item>
+    </plurals>
+    <plurals name="data_skipped">
+        <item quantity="one">%d gab es schon und wurde übersprungen.</item>
+        <item quantity="other">%d gab es schon und wurden übersprungen.</item>
+    </plurals>
+    <plurals name="data_invalid">
+        <item quantity="one">%d war ungültig und wurde ignoriert.</item>
+        <item quantity="other">%d waren ungültig und wurden ignoriert.</item>
+    </plurals>
+    <string name="data_write_failed">Die Datei konnte nicht geschrieben werden.</string>
+    <string name="data_read_failed">Die Datei konnte nicht gelesen werden oder ist zu groß.</string>
+    <string name="data_invalid_file">Das ist keine Export-Datei dieser App.</string>
+
+    <!-- Widget -->
+    <string name="widget_description">Zeigt das verfügbare Budget des aktuellen Monats</string>
+    <string name="widget_no_month">%1$s noch nicht angelegt</string>
+    <string name="widget_tap_to_create">Tippen, um die App zu öffnen</string>
 
     <!-- Wallos -->
     <string name="wallos_section">Wallos-Integration</string>

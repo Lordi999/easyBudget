@@ -1,12 +1,26 @@
 package de.meinbudget.app
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withContext
+import java.time.LocalDate
 import java.time.YearMonth
 
+sealed interface TransferResult {
+    data class Exported(val count: Int) : TransferResult
+    data class Imported(val result: ImportResult) : TransferResult
+    data object WriteFailed : TransferResult
+    /** Datei nicht lesbar oder größer als erlaubt */
+    data object ReadFailed : TransferResult
+    /** Datei lesbar, aber kein Export dieser App */
+    data object InvalidFile : TransferResult
+}
+
 class BudgetViewModel(app: Application) : AndroidViewModel(app) {
-    private val repo = BudgetRepository(app)
+    private val repo = BudgetRepository.get(app)
     private val settings = SettingsRepository(app)
     val months: StateFlow<List<Month>> = repo.months
     val storageProblem: StateFlow<StorageProblem?> = repo.problem
@@ -20,6 +34,35 @@ class BudgetViewModel(app: Application) : AndroidViewModel(app) {
 
     val wallos: StateFlow<WallosConfig> = settings.wallos
     fun setWallos(config: WallosConfig) = settings.setWallos(config)
+
+    /** Schreibt alle Monate in die vom Nutzer gewählte Datei. */
+    suspend fun exportTo(uri: Uri): TransferResult = withContext(Dispatchers.IO) {
+        val months = months.value
+        val text = BudgetBackup.encode(months, LocalDate.now().toString())
+        try {
+            val resolver = getApplication<Application>().contentResolver
+            // "wt" kürzt eine überschriebene Datei; nicht jeder Anbieter kennt den Modus.
+            val stream = runCatching { resolver.openOutputStream(uri, "wt") }.getOrNull()
+                ?: resolver.openOutputStream(uri)
+                ?: return@withContext TransferResult.WriteFailed
+            stream.use { it.write(text.toByteArray(Charsets.UTF_8)) }
+            TransferResult.Exported(months.size)
+        } catch (e: Exception) {
+            TransferResult.WriteFailed
+        }
+    }
+
+    /** Liest eine Export-Datei; vorhandene Monate werden übersprungen. */
+    suspend fun importFrom(uri: Uri): TransferResult = withContext(Dispatchers.IO) {
+        val text = try {
+            getApplication<Application>().contentResolver.openInputStream(uri)
+                ?.let { readLimitedText(it, BudgetBackup.MAX_BYTES) }
+        } catch (e: Exception) {
+            null
+        } ?: return@withContext TransferResult.ReadFailed
+        val parsed = BudgetBackup.decode(text) ?: return@withContext TransferResult.InvalidFile
+        TransferResult.Imported(repo.importMonths(parsed))
+    }
 
     /**
      * Vorschlag für den nächsten Monat: Folgemonat des neuesten Monats,

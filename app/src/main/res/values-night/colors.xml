@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Widget, dunkler Modus (gleiche Töne wie in der App) -->
+    <color name="widget_background">#FF1E1F26</color>
+    <color name="widget_text">#FFE4E1E9</color>
+    <color name="widget_text_secondary">#FFC7C5D0</color>
+    <color name="amount_positive">#FF5CD67A</color>
+    <color name="amount_negative">#FFFF6B6B</color>
+</resources>
